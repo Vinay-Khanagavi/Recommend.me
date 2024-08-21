@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.0",
     "@mui/material": "^5.16.7",
     "next": "14.2.5",
     "openai": "^4.56.0",
+    "pinecone": "^0.1.0",
     "react": "^18",
     "react-dom": "^18"
   },
