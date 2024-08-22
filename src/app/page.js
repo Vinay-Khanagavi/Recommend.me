@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertTitle, Tab, Tabs, Box, TextField, Button, Typography, Select, MenuItem, Paper } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
@@ -37,6 +37,8 @@ export default function Home() {
   const [searchCriteria, setSearchCriteria] = useState('');
   const [recommendations, setRecommendations] = useState([]);
   const [activeTab, setActiveTab] = useState('chat');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (professor) {
@@ -44,35 +46,132 @@ export default function Home() {
     }
   }, [professor, timeRange]);
 
-  const sendMessage = async () => {
-    if (!message.trim()) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: 'user', content: message },
-      { role: 'assistant', content: '' },
-    ]);
+  useEffect(scrollToBottom, [messages]);
+
+  const sendMessage = async () => {
+    if (!message.trim() || isLoading) return;
+
+    setIsLoading(true);
+    const userMessage = { role: 'user', content: message };
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setMessage('');
 
-    setTimeout(() => {
-      setMessages((prevMessages) => [
-        ...prevMessages.slice(0, -1),
-        { role: 'assistant', content: `Here's some information about ${message} based on our Pinecone database...` },
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([...messages, userMessage]),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        setMessages(prevMessages => {
+          const lastMessage = prevMessages[prevMessages.length - 1];
+          const updatedMessages = prevMessages.slice(0, -1);
+          return [...updatedMessages, { ...lastMessage, content: lastMessage.content + chunk }];
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { role: 'assistant', content: 'Sorry, there was an error processing your request.' },
       ]);
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const submitRmpLink = async () => {
-    alert(`Scraping and inserting data from: ${rmpLink}`);
+    if (!rmpLink.trim()) return;
+
+    try {
+      const response = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: rmpLink }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to scrape and insert data');
+      }
+
+      const result = await response.json();
+      alert(`Successfully scraped and inserted data for: ${result.professorName}`);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to scrape and insert data. Please try again.');
+    }
+
     setRmpLink('');
   };
 
   const searchProfessors = async () => {
-    setRecommendations([
-      { name: 'Dr. Smith', rating: 4.5, department: 'Computer Science' },
-      { name: 'Prof. Johnson', rating: 4.2, department: 'Mathematics' },
-      { name: 'Dr. Williams', rating: 4.8, department: 'Physics' },
-    ]);
+    if (!searchCriteria.trim()) return;
+
+    try {
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ criteria: searchCriteria }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search professors');
+      }
+
+      const result = await response.json();
+      setRecommendations(result.professors);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to search professors. Please try again.');
+    }
+  };
+
+  const fetchSentimentData = async () => {
+    if (!professor.trim()) return;
+
+    try {
+      const response = await fetch('/api/sentiment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ professor, timeRange }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch sentiment data');
+      }
+
+      const result = await response.json();
+      setSentimentData(result.sentimentData);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to fetch sentiment data. Please try again.');
+    }
   };
 
   const handleTabChange = (event, newValue) => {
@@ -116,20 +215,28 @@ export default function Home() {
                     <Typography>{msg.content}</Typography>
                   </Paper>
                 ))}
+                <div ref={messagesEndRef} />
               </Box>
               <Box className="flex">
                 <TextField
                   fullWidth
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      sendMessage();
+                    }
+                  }}
                   placeholder="Ask about a professor..."
                   variant="outlined"
+                  disabled={isLoading}
                 />
                 <Button
                   onClick={sendMessage}
                   variant="contained"
                   color="primary"
                   endIcon={<SendIcon />}
+                  disabled={isLoading}
                 >
                   Send
                 </Button>
@@ -220,6 +327,14 @@ export default function Home() {
                   <MenuItem value="6months">6 Months</MenuItem>
                   <MenuItem value="1year">1 Year</MenuItem>
                 </Select>
+                <Button
+                  onClick={fetchSentimentData}
+                  variant="contained"
+                  color="primary"
+                  endIcon={<TrendingUpIcon />}
+                >
+                  Analyze Sentiment
+                </Button>
               </Box>
               {sentimentData.length > 0 && (
                 <ResponsiveContainer width="100%" height={300}>
