@@ -4,61 +4,36 @@ import dynamic from 'next/dynamic';
 import { Box, Button, Typography, Paper, Alert, CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
-// Dynamically import PDF components with ssr disabled
-const PDFDocument = dynamic(() => import('react-pdf').then(mod => mod.Document), {
-  ssr: false,
-});
-const PDFPage = dynamic(() => import('react-pdf').then(mod => mod.Page), {
+// Dynamically import PDF viewer components
+const PDFViewer = dynamic(() => import('@react-pdf-viewer/core').then(mod => mod.Viewer), {
   ssr: false,
 });
 
-// Dynamically import axios
-const axios = dynamic(() => import('axios'), { ssr: false });
+// Dynamically import the styles
+const PDFViewerStyles = dynamic(() => import('@react-pdf-viewer/core/lib/styles/index.css'), {
+  ssr: false,
+});
 
 export default function Home() {
   const [file, setFile] = useState(null);
-  const [pdfImage, setPdfImage] = useState(null);
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processResult, setProcessResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleFileChange = async (event) => {
+  const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       setFile(selectedFile);
+      setPdfUrl(URL.createObjectURL(selectedFile));
       setUploadStatus('PDF selected. Ready to process.');
-      
-      // We'll handle PDF preview in a separate function
-      createPdfPreview(selectedFile);
     } else {
       setFile(null);
-      setPdfImage(null);
+      setPdfUrl(null);
       setUploadStatus('Please select a valid PDF file.');
     }
-  };
-
-  const createPdfPreview = async (pdfFile) => {
-    const reader = new FileReader();
-    reader.onload = async function(event) {
-      const { pdfjs } = await import('react-pdf');
-      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-      
-      const pdfData = new Uint8Array(event.target.result);
-      const pdf = await pdfjs.getDocument({data: pdfData}).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({scale: 1.5});
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      await page.render({canvasContext: context, viewport: viewport}).promise;
-      setPdfImage(canvas.toDataURL());
-    };
-    reader.readAsArrayBuffer(pdfFile);
   };
 
   const processFile = async () => {
@@ -71,13 +46,17 @@ export default function Home() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post('/api/process-pdf', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await fetch('/api/process-pdf', {
+        method: 'POST',
+        body: formData,
       });
 
-      setProcessResult(response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setProcessResult(result);
       setUploadStatus('PDF processed successfully. Ready to send to Google Sheets.');
     } catch (error) {
       console.error('Error:', error);
@@ -89,21 +68,21 @@ export default function Home() {
 
   const requestGoogleAuth = async () => {
     try {
-      const response = await axios.get('/api/google-auth');
-      window.location.href = response.data.authUrl;
+      const response = await fetch('/api/google-auth');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      window.location.href = data.authUrl;
     } catch (error) {
       console.error('Error:', error);
       setUploadStatus('Error requesting Google authorization.');
     }
   };
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
-  };
-
   return (
     <Box className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <PDFViewerStyles />
       <Box className="max-w-7xl mx-auto">
         <Box className="text-center mb-8">
           <Typography variant="h2" className="text-4xl font-bold text-indigo-600 mb-2">📄 PDF to Google Sheets</Typography>
@@ -144,28 +123,9 @@ export default function Home() {
             </Box>
           )}
 
-          {pdfImage && (
-            <Box className="mb-4">
-              <Typography variant="h6" className="mb-2">PDF Preview:</Typography>
-              <img src={pdfImage} alt="PDF preview" style={{maxWidth: '100%', height: 'auto'}} />
-            </Box>
-          )}
-
-          {file && (
-            <Box className="mb-4">
-              <PDFDocument
-                file={file}
-                onLoadSuccess={onDocumentLoadSuccess}
-              >
-                <PDFPage pageNumber={pageNumber} />
-              </PDFDocument>
-              <Typography>Page {pageNumber} of {numPages}</Typography>
-              <Button disabled={pageNumber <= 1} onClick={() => setPageNumber(pageNumber - 1)}>
-                Previous
-              </Button>
-              <Button disabled={pageNumber >= numPages} onClick={() => setPageNumber(pageNumber + 1)}>
-                Next
-              </Button>
+          {pdfUrl && (
+            <Box className="mb-4" style={{ height: '500px' }}>
+              <PDFViewer fileUrl={pdfUrl} />
             </Box>
           )}
 
