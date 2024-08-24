@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Alert, AlertTitle, Tab, Tabs, Box, TextField, Button, Typography, Select, MenuItem, Paper } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 import SendIcon from '@mui/icons-material/Send';
 import BookIcon from '@mui/icons-material/Book';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
