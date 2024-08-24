@@ -1,0 +1,124 @@
+{
+    "reviews": [
+      {
+        "professor": "Dr. Emily Chen",
+        "review": "Great professor! Explains complex concepts clearly and is always willing to help during office hours.",
+        "subject": "Computer Science",
+        "stars": 5
+      },
+      {
+        "professor": "Prof. Michael Johnson",
+        "review": "Tough grader but fair. His lectures are engaging and he really knows his stuff.",
+        "subject": "History",
+        "stars": 4
+      },
+      {
+        "professor": "Dr. Sarah Thompson",
+        "review": "Brilliant researcher, but her teaching style can be a bit dry at times.",
+        "subject": "Physics",
+        "stars": 3
+      },
+      {
+        "professor": "Prof. David Rodriguez",
+        "review": "Awesome professor! Makes economics interesting and relates concepts to real-world scenarios.",
+        "subject": "Economics",
+        "stars": 5
+      },
+      {
+        "professor": "Dr. Lisa Wang",
+        "review": "Very knowledgeable, but can be intimidating during class discussions.",
+        "subject": "Philosophy",
+        "stars": 3
+      },
+      {
+        "professor": "Prof. James Smith",
+        "review": "Terrible experience. Lectures were confusing and he wasn't helpful during office hours.",
+        "subject": "Chemistry",
+        "stars": 1
+      },
+      {
+        "professor": "Dr. Rachel Green",
+        "review": "One of the best professors I've had. Her passion for biology is contagious!",
+        "subject": "Biology",
+        "stars": 5
+      },
+      {
+        "professor": "Prof. Robert Brown",
+        "review": "Decent professor, but the workload was excessive for an introductory course.",
+        "subject": "Psychology",
+        "stars": 3
+      },
+      {
+        "professor": "Dr. Emma Wilson",
+        "review": "Her lectures are a bit slow-paced, but she's very thorough and approachable.",
+        "subject": "English Literature",
+        "stars": 4
+      },
+      {
+        "professor": "Prof. Alex Martinez",
+        "review": "Challenging course, but Prof. Martinez makes it manageable with his clear explanations.",
+        "subject": "Statistics",
+        "stars": 4
+      },
+      {
+        "professor": "Dr. Olivia Taylor",
+        "review": "Uninspiring lectures and unclear expectations for assignments. Disappointing overall.",
+        "subject": "Sociology",
+        "stars": 2
+      },
+      {
+        "professor": "Prof. Daniel Lee",
+        "review": "Exceptional professor! His enthusiasm for art history is infectious.",
+        "subject": "Art History",
+        "stars": 5
+      },
+      {
+        "professor": "Dr. Sophia Patel",
+        "review": "Brilliant mind, but struggles to convey complex ideas to students effectively.",
+        "subject": "Quantum Mechanics",
+        "stars": 3
+      },
+      {
+        "professor": "Prof. Thomas Wright",
+        "review": "Fair grader and provides helpful feedback. Lectures could be more engaging though.",
+        "subject": "Political Science",
+        "stars": 4
+      },
+      {
+        "professor": "Dr. Natalie Kim",
+        "review": "Outstanding professor! Her practical approach to environmental science is refreshing.",
+        "subject": "Environmental Science",
+        "stars": 5
+      },
+      {
+        "professor": "Prof. Christopher Evans",
+        "review": "Knowledgeable but often seems unprepared for lectures. Assignments are interesting though.",
+        "subject": "Anthropology",
+        "stars": 3
+      },
+      {
+        "professor": "Dr. Amanda Foster",
+        "review": "Terrible experience. Unclear expectations and unhelpful feedback on assignments.",
+        "subject": "Marketing",
+        "stars": 1
+      },
+      {
+        "professor": "Prof. Kevin O'Brien",
+        "review": "Tough but fair. His method of teaching calculus really helped concepts click for me.",
+        "subject": "Mathematics",
+        "stars": 4
+      },
+      {
+        "professor": "Dr. Julia Sanchez",
+        "review": "Passionate about linguistics and it shows in her teaching. Always willing to help students.",
+        "subject": "Linguistics",
+        "stars": 5
+      },
+      {
+        "professor": "Prof. Mark Anderson",
+        "review": "Decent professor overall. Lectures are informative but can be a bit monotonous.",
+        "subject": "Business Ethics",
+        "stars": 3
+      }
+    ]
+  }
