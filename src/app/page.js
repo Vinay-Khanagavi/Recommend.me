@@ -181,13 +181,12 @@ export default function Home() {
     <Box className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <Box className="max-w-7xl mx-auto">
         <Box className="text-center mb-8">
-          <Typography variant="h2" className="text-4xl font-bold text-indigo-600 mb-2">📚 AI Rate My Professor</Typography>
+          <Typography variant="h2" className="text-4xl font-bold text-indigo-600 mb-2"> RMP </Typography>
           <Typography variant="h5" className="text-xl text-gray-600">Your comprehensive AI-powered professor insights platform</Typography>
         </Box>
 
         <Alert severity="info" className="mb-8">
           <AlertTitle>Welcome to AI Rate My Professor!</AlertTitle>
-          Chat with our AI, submit professor links, get personalized recommendations, and analyze sentiment trends.
         </Alert>
 
         <Tabs value={activeTab} onChange={handleTabChange} className="w-full">
