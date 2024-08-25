@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { CohereClient } from 'cohere-ai';
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+const cohere = new CohereClient({ 
+  token: process.env.COHERE_API_KEY 
 });
 
 export async function POST(req) {
@@ -26,7 +30,7 @@ export async function POST(req) {
     const overallRating = $('.RatingValue__Numerator-qw8sqy-2').text().trim();
     const reviews = $('.Comments__StyledComments-dzzyvm-0').map((_, el) => $(el).text().trim()).get();
 
-    // Prepare data for OpenAI processing
+    // Prepare data for Gemini processing
     const dataForProcessing = `
       Professor: ${professorName}
       Department: ${department}
@@ -35,35 +39,28 @@ export async function POST(req) {
       ${reviews.join('\n')}
     `;
 
-    // Use OpenAI to summarize and structure the data
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are an assistant that summarizes professor information from Rate My Professor. Provide a concise summary and extract key points from the reviews."
-        },
-        {
-          role: "user",
-          content: dataForProcessing
-        }
-      ],
+    // Use Gemini to summarize and structure the data
+    const result = await model.generateContent({
+      contents: [{
+        role: "user",
+        parts: [{ text: `Summarize this professor information and extract key points from the reviews: ${dataForProcessing}` }]
+      }]
     });
+    const summary = result.response.text();
 
-    const summary = completion.choices[0].message.content;
-
-    // Generate embedding for the summary
-    const embedding = await openai.embeddings.create({
-      model: "text-embedding-ada-002",
-      input: summary,
+    // Generate embedding for the summary using Cohere
+    const embeddingResponse = await cohere.embed({
+      texts: [summary],
+      model: 'embed-english-v2.0',
     });
+    const embedding = embeddingResponse.embeddings[0];
 
     // Insert into Pinecone
     const index = pinecone.index('rag');
     await index.upsert([
       {
         id: professorName.replace(/\s+/g, '-').toLowerCase(),
-        values: embedding.data[0].embedding,
+        values: embedding,
         metadata: {
           professorName,
           department,
@@ -73,9 +70,9 @@ export async function POST(req) {
       }
     ]);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Professor data scraped and inserted successfully',
-      professorName 
+      professorName
     });
   } catch (error) {
     console.error('Error in scrape route:', error);
